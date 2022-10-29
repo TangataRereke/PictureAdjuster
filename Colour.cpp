@@ -1,4 +1,7 @@
-#include "Colour.h"
+#ifndef COLOUR_H
+    #include "Colour.h"
+    #define COLOUR_H
+#endif
 
 Colour::Colour(int pColourNumber, ColourSingleton *pSingleton)
 {
@@ -43,37 +46,6 @@ Colour::Colour(int pColourNumber, ColourSingleton *pSingleton)
     isSkinHue = !(gHue>70&&gHue<295);
     isSkinColour = isSkinHue && isSkinValue && isSkinValue;
 
-    // Setup relationships
-
-/*
-        Colour *gNextBrightColour = 0;
-        Colour *gPreviousBrightColour = 0;
-        Colour *gNextValueColour = 0;
-        Colour *gPreviousValueColour = 0;
-        /Colour *gNextHueColour = 0;
-        /Colour *gPreviousHueColour = 0;
-        Colour *gNextSaturationColour = 0;
-        Colour *gPreviousSaturationColour = 0;
-        Colour *gNextRedColour = 0;
-        Colour *gNextGreenColour = 0;
-        Colour *gNextBlueColour = 0;
-        Colour *gPreviousRedColour = 0;
-        Colour *gPreviousGreenColour = 0;
-        Colour *gPreviousBlueColour = 0;*/
-
-
-
-    // Setup singletons
-   /*   /Colour *gAllColours = 0;
-        /Colour *gLastAllColours = 0;
-        Colour *gAllColoursByRed = 0;
-        Colour *gAllColoursByGreen = 0;
-        Colour *gAllColoursByBlue = 0;
-        Colour *gLastColourByRed = 0;
-        Colour *gLastColourByGreen = 0;
-        Colour *gLastColourByBlue = 0;
-        /Colour *gAllColoursByHue = 0;
-        /Colour *gLastColourByHue = 0;*/
 
 
     if(gSingleton->gAllColours==0){
@@ -91,21 +63,6 @@ Colour::Colour(int pColourNumber, ColourSingleton *pSingleton)
 }
 
 void Colour::resynch(){
-    // Calculate the brightnesses
-    /*int lRed = gRed - 1;
-    int lGreen = gGreen - 1;
-    int lBlue = gBlue - 1;
-    if(lRed>=0&&lGreen>=0&&lBlue>=0){
-        gPreviousBrightColour = gSingleton->getColour(lRed, lGreen, lBlue);
-    }
-
-    lRed = gRed+1;
-    lGreen = gGreen+1;
-    lBlue = gBlue+1;
-    if(lRed<=255&&lGreen<=255&&lBlue<=255){
-        gNextBrightColour = gSingleton->getColour(lRed, lGreen, lBlue);
-    }*/
-
     int lRed = gRed - 1;
     int lGreen = gGreen - 1;
     int lBlue = gBlue - 1;

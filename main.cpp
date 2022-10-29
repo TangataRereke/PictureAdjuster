@@ -18,16 +18,14 @@ using namespace std;
 int width = 0;
 int height = 0;
 int size = 0;
-int bytes_per_pixel = 3;
-J_COLOR_SPACE color_space = JCS_RGB;
 //#define THREAD_COUNT 1
 #define THREAD_COUNT 16
 //#define Input_Path "/home/james/Documents/PhotosP/Processed/"
-#define Input_Path "/home/james/Pictures/ToJPG/"
+#define Input_Path "/media/james/Data1/PictureFrameDemo/ConvertFrom/"
 #define Input_SplitPath "/home/james/Documents/Code/SplitSample/Input/"
 //#define Output_Path "/home/james/Documents/PhotosP/Processed/New/"
 //#define Output_Path "/home/james/Pictures/PictureFrame/"
-#define Output_Path "/home/james/Pictures/ToJPGFixed/"
+#define Output_Path "/media/james/Data1/PictureFrameDemo/Fixed/All/"
 //#define Output_Path "/home/james/Pictures/1080p/"
 //#define Output_Path "/home/james/Pictures/4k/"
 #define Output_SplitPath "/home/james/Documents/Code/SplitSample/Output/"
@@ -216,13 +214,15 @@ void autoResizePicture(const char *pPath, const char *pFilename)
 
     /* Don't change comment out >> remove */
     //obj->removeInterference();
+    obj->smartResize(1920, 2160);
+    obj->removeInterference();
+    obj->removeDuplicatePixels();
     obj->autoLighten();
     //obj->removeTint();
  //   obj->smartResize(775, 440);
  //  obj->smartResize(1920, 1080);
     //obj->smartResize(3840, 2160);
     //obj->removeInterference();
-    obj->removeDuplicatePixels();
 
 
     // End of main
@@ -250,7 +250,8 @@ void autoSplitPicture(const char *pPath, const char *pFilename)
 
     // End of main
     stringstream lS;
-    lS << Output_SplitPath << pFilename;
+    lS << Output_SplitPath << pFilename;    obj->autoLighten();
+
     //lS << Input_Path << "New/" << pFilename;
     obj->saveJpeg(lS.str().c_str());
     delete obj;
@@ -279,7 +280,7 @@ void autoResizePictures(const char *pPath)
         if(files[i].find(".gz")!=string::npos){
             continue;
         }
-        if(files[i].find(".jpg")==string::npos)
+        if(files[i].find(".jpeg")==string::npos)
         {
             stringstream lNewPath;
             lNewPath << pPath << files[i] << "/";

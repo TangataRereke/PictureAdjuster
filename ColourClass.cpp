@@ -1,4 +1,8 @@
-#include "ColourClass.h"
+#ifndef COLOURCLASS_H
+	#include "ColourClass.h"
+	#define COLOURCLASS_H
+#endif
+#include <algorithm>
 
 void ColourClass::setRGB(short pRed, short pGreen, short pBlue){
 	gColour.red = pRed;
@@ -252,7 +256,7 @@ bool ColourClass::isTintable(){
 	return getSaturation() > 33;
 }
 
-ColourRef ColourClass::applyTint(ColourRef pTint){
+ColourClass::ColourRef ColourClass::applyTint(ColourRef pTint){
 	int lColour = gColour.red - pTint.red;
 	gColour.red = max(lColour, 0) / 2;
 	lColour = gColour.green - pTint.green;
@@ -262,7 +266,7 @@ ColourRef ColourClass::applyTint(ColourRef pTint){
 	return gColour;
 }
 
-ColourRef ColourClass::checkTint(ColourRef pMainTint, bool &pStop){
+ColourClass::ColourRef ColourClass::checkTint(ColourRef pMainTint, bool &pStop){
 	ColourRef lReturn;
 	memcpy(&lReturn, &pMainTint, sizeof(ColourRef));
 	if(gColour.red<lReturn.red){
