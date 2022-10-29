@@ -19,7 +19,7 @@ int width = 0;
 int height = 0;
 int size = 0;
 //#define THREAD_COUNT 1
-#define THREAD_COUNT 16
+#define THREAD_COUNT 4
 //#define Input_Path "/home/james/Documents/PhotosP/Processed/"
 #define Input_Path "/media/james/Data1/PictureFrameDemo/ConvertFrom/"
 #define Input_SplitPath "/home/james/Documents/Code/SplitSample/Input/"
@@ -213,11 +213,13 @@ void autoResizePicture(const char *pPath, const char *pFilename)
     obj->loadJpeg(lIF.str().c_str());
 
     /* Don't change comment out >> remove */
-    //obj->removeInterference();
-    obj->smartResize(1920, 2160);
+    obj->autoLighten();
+    obj->removeTint();
     obj->removeInterference();
     obj->removeDuplicatePixels();
-    obj->autoLighten();
+    obj->smartResize(1920, 2160);
+    obj->removeDuplicatePixels();
+
     //obj->removeTint();
  //   obj->smartResize(775, 440);
  //  obj->smartResize(1920, 1080);
