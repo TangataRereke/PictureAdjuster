@@ -312,9 +312,36 @@ void ColourClass::setBrightness(double pNewBrightness){
 }
 
 double ColourClass::getMinimumBalance(){
-    return (getBrightness() - getMin())+1;
+    return (getBrightness() - getMin());
 }
 
+double ColourClass::getMaximumBalancePossible(){
+	double lRed = gColour.red;
+	double lGreen = gColour.green;
+	double lBlue = gColour.blue;
+	//cout << "Start" << "Red: " << lRed << " Green: " << lGreen << " Blue: " << lBlue << endl;
+	while(lRed<255&&lGreen<255&&lBlue<255){
+		lRed++;
+		lGreen++;
+		lBlue++;
+	}
+	return min(min(lRed, lGreen), lBlue);
+
+}
+
+double ColourClass::getMinimumBalancePossible(){
+	double lRed = gColour.red;
+	double lGreen = gColour.green;
+	double lBlue = gColour.blue;
+	//cout << "Start" << "Red: " << lRed << " Green: " << lGreen << " Blue: " << lBlue << endl;
+	while(lRed>0&&lGreen>0&&lBlue>0){
+		lRed--;
+		lGreen--;
+		lBlue--;
+	}
+	return max(max(lRed, lGreen), lBlue);
+
+}
 
 double ColourClass::getBrightness(){
     return getMax();
@@ -330,7 +357,7 @@ double ColourClass::getBrightness(){
 }
 
 double ColourClass::getMaximumBalance(){
-	return 255;
+	return getMax();
 }
 
 void ColourClass::invertColours(){

@@ -19,7 +19,7 @@ int width = 0;
 int height = 0;
 int size = 0;
 //#define THREAD_COUNT 1
-#define THREAD_COUNT 4
+#define THREAD_COUNT 6
 //#define Input_Path "/home/james/Documents/PhotosP/Processed/"
 #define Input_Path "/media/james/Data1/PictureFrameDemo/ConvertFrom/"
 #define Input_SplitPath "/home/james/Documents/Code/SplitSample/Input/"
@@ -214,18 +214,13 @@ void autoResizePicture(const char *pPath, const char *pFilename)
 
     /* Don't change comment out >> remove */
     obj->autoLighten();
-    obj->removeTint();
     obj->removeInterference();
-    obj->removeDuplicatePixels();
     obj->smartResize(1920, 2160);
     obj->removeDuplicatePixels();
-
-    //obj->removeTint();
- //   obj->smartResize(775, 440);
- //  obj->smartResize(1920, 1080);
-    //obj->smartResize(3840, 2160);
-    //obj->removeInterference();
-
+    obj->removeInterference();
+    obj->autoLighten();
+    obj->removeInterference();
+    obj->removeDuplicatePixels();
 
     // End of main
     stringstream lS;

@@ -1,5 +1,6 @@
 #include <memory.h>
 #include <sstream>
+#include <iostream>
 
 using namespace std;
 
@@ -10,6 +11,8 @@ class ColourClass{
             char unsigned green;
             char unsigned blue;
         };
+        double getMaximumBalancePossible();
+        double getMinimumBalancePossible();
         void invertColours();
         double getMaximumBalance();
         double getMinimumBalance();

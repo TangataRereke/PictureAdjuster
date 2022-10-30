@@ -217,6 +217,7 @@ bool PictureClass::removeInterferenceX(){
 	}
 	return lChanged;
 }
+
 bool PictureClass::removeInterferenceY(){
 	bool lChanged = false;
 	for(int bY=0;bY<gHeight-1;bY++){
@@ -261,48 +262,39 @@ void PictureClass::removeInterference(){
 double PictureClass::getHighestColourMax(){
 	deleteColourItems();
 	gSortItemColourCount = 0;
-	double lHighestColour = 0;
-	double lHighestColourMax = 0;
-
+    double lHighPossible = 0;
+    double lHighestPossible = 0;
 	for(int bX=0;bX<gWidth;bX++){
 		for(int bY=0;bY<gHeight;bY++){
 			getPixel(bX, bY);
 			double lValue = gCurrentColour.getBrightness();
 			insertColourSortItem(lValue, bX, bY);
-			if(lValue==lHighestColour){
-				if(gCurrentColour.getMaximumBalance()<lHighestColourMax){
-					lHighestColourMax = gCurrentColour.getMaximumBalance();
-				}
-			}else if(lValue>lHighestColour){
-				lHighestColour = lValue;
-				lHighestColourMax = gCurrentColour.getMaximumBalance();
-			}
-
+            lHighPossible = gCurrentColour.getMaximumBalancePossible();
+            if(lHighPossible>lHighestPossible){
+                lHighestPossible = lHighPossible;
+            }
+			
 		}
 	}
-	return lHighestColourMax;
+	return lHighestPossible;
 }
 
 double PictureClass::getLowestColourMin(){
-	double lLowestColour = 0;
-	double lLowestColourMin = 0;
-
+    double lLowPossible = 0;
+    double lLowestPossible = 0;
 	for(int bX=0;bX<gWidth;bX++){
 		for(int bY=0;bY<gHeight;bY++){
 			getPixel(bX, bY);
 			double lValue = gCurrentColour.getBrightness();
-			if(lValue==lLowestColour){
-				if(gCurrentColour.getMinimumBalance()>lLowestColour){
-					lLowestColourMin = gCurrentColour.getMinimumBalance();
-				}
-			}else if(lValue<lLowestColour){
-				lLowestColour = lValue;
-				lLowestColourMin = gCurrentColour.getMinimumBalance();
-			}
-
+			insertColourSortItem(lValue, bX, bY);
+            lLowPossible = gCurrentColour.getMinimumBalancePossible();
+            if(lLowPossible<lLowestPossible){
+                lLowestPossible = lLowPossible;
+            }
+			
 		}
 	}
-	return lLowestColourMin;
+	return lLowestPossible;
 }
 
 double PictureClass::changeBrightnessOfItem(bool pFirst, ColourItemSort *pColourSortItem, double pTargetBrightness, double pFactor){
@@ -353,7 +345,7 @@ double PictureClass::autoBrightenSmallFactor(double pHighestBrightness, double p
 void PictureClass::lastResortAutoBrighten(double pColourMax){
 	double lHighestColourMax = pColourMax;
 	double lLowestColourMin = getLowestColourMin();
-	double lRate = (lHighestColourMax - lLowestColourMin) / gSortItemColourCount;
+	double lRate = (lHighestColourMax - lLowestColourMin + 1) / gSortItemColourCount;
 	double lBrightness = lHighestColourMax;
 	ColourItemSort *lItem = gAllColourSortItems;
 	while(lItem!=0){
@@ -366,7 +358,12 @@ void PictureClass::lastResortAutoBrighten(double pColourMax){
 			lPoint = lPoint->next;
 		}
 		if(lItem->next!=0){
-			lBrightness = lBrightness - lRate;	
+            if(lBrightness < 0.5){
+                lBrightness = 0;
+            }else{
+			    lBrightness = lBrightness - lRate;	
+            }
+            
 			lItem = lItem->next;
 		}else{
 			return;
@@ -381,7 +378,7 @@ bool PictureClass::autoBrighten(double pHighestBrightness, double pFactor, doubl
 	if(pHighestBrightness<0){
 		return false;
 	}
-	double lNewBrightness = autoBrightenSmallFactor(pHighestBrightness, .003);
+	double lNewBrightness = autoBrightenSmallFactor(pHighestBrightness, .0001);
 	if(lNewBrightness<=0){
 		if((pFactor-pTryAgainAmount)<=0){
 			if(pTryAgainAmount==0.1){
