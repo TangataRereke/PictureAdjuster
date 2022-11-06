@@ -21,11 +21,11 @@ int size = 0;
 //#define THREAD_COUNT 1
 #define THREAD_COUNT 6
 //#define Input_Path "/home/james/Documents/PhotosP/Processed/"
-#define Input_Path "/media/james/Data1/PictureFrameDemo/ConvertFrom/"
+#define Input_Path "/media/james/Data1/LoisPictureFrom/Before/"
 #define Input_SplitPath "/home/james/Documents/Code/SplitSample/Input/"
 //#define Output_Path "/home/james/Documents/PhotosP/Processed/New/"
 //#define Output_Path "/home/james/Pictures/PictureFrame/"
-#define Output_Path "/media/james/Data1/PictureFrameDemo/Fixed/All/"
+#define Output_Path "/media/james/Data1/LoisPictureFrom/After/"
 //#define Output_Path "/home/james/Pictures/1080p/"
 //#define Output_Path "/home/james/Pictures/4k/"
 #define Output_SplitPath "/home/james/Documents/Code/SplitSample/Output/"
@@ -161,9 +161,7 @@ void createSampleImage(int pWidth, int pHeight)
             obj->setPen(0,255,255);
         }
         obj->drawRectangle(lLeftRect);
-        obj->drawRectangle(lRightRect);
-        lTop = lTop + 100;
-        lLeftRect.left = lTop;
+        //obj->drawRectangle = lTop;
         lLeftRect.right = lTop + 100;
         lRightRect.left = lLeftRect.left;
         lRightRect.right = lLeftRect.right;
@@ -215,7 +213,7 @@ void autoResizePicture(const char *pPath, const char *pFilename)
     /* Don't change comment out >> remove */
     obj->autoLighten();
     obj->removeInterference();
-    obj->smartResize(1920, 2160);
+    obj->smartResize(1280, 800);
     obj->removeDuplicatePixels();
     obj->removeInterference();
     obj->autoLighten();
@@ -256,6 +254,10 @@ void autoSplitPicture(const char *pPath, const char *pFilename)
     cout << "   Saved " << lIF.str() << endl;
 }
 
+void removeDuplicates(const char *pPath){
+
+}
+
 void autoResizePictures(const char *pPath)
 {
     string dir = string(pPath);
@@ -277,7 +279,7 @@ void autoResizePictures(const char *pPath)
         if(files[i].find(".gz")!=string::npos){
             continue;
         }
-        if(files[i].find(".jpeg")==string::npos)
+        if(files[i].find(".jpg")==string::npos&&files[i].find(".JPG")==string::npos&&files[i].find(".jpeg")==string::npos)
         {
             stringstream lNewPath;
             lNewPath << pPath << files[i] << "/";
