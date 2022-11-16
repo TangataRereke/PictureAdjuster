@@ -213,7 +213,7 @@ void autoResizePicture(const char *pPath, const char *pFilename)
     /* Don't change comment out >> remove */
     obj->autoLighten();
     obj->removeInterference();
-    obj->smartResize(1280, 800);
+    obj->smartResize(800, 600); // Philips SPF5008/75 resolution
     obj->removeDuplicatePixels();
     obj->removeInterference();
     obj->autoLighten();
