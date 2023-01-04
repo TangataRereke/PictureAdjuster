@@ -21,11 +21,11 @@ int size = 0;
 //#define THREAD_COUNT 1
 #define THREAD_COUNT 6
 //#define Input_Path "/home/james/Documents/PhotosP/Processed/"
-#define Input_Path "/media/james/Data1/LoisPictureFrom/Before/"
+#define Input_Path "/home/james/LoisPictureFrom/Before/"
 #define Input_SplitPath "/home/james/Documents/Code/SplitSample/Input/"
 //#define Output_Path "/home/james/Documents/PhotosP/Processed/New/"
 //#define Output_Path "/home/james/Pictures/PictureFrame/"
-#define Output_Path "/media/james/Data1/LoisPictureFrom/After/"
+#define Output_Path "/home/james/LoisPictureFrom/After/"
 //#define Output_Path "/home/james/Pictures/1080p/"
 //#define Output_Path "/home/james/Pictures/4k/"
 #define Output_SplitPath "/home/james/Documents/Code/SplitSample/Output/"
@@ -212,7 +212,7 @@ void autoResizePicture(const char *pPath, const char *pFilename)
 
     /* Don't change comment out >> remove */
     obj->autoLighten();
-    obj->removeInterference();
+/   obj->removeInterference();
     obj->smartResize(800, 600); // Philips SPF5008/75 resolution
     obj->removeDuplicatePixels();
     obj->removeInterference();
@@ -240,8 +240,7 @@ void autoSplitPicture(const char *pPath, const char *pFilename)
     obj->loadJpeg(lIF.str().c_str());
 
     /* Don't change comment out >> remove */
-    obj->skinDetect();
-
+    obj->showSkin();
 
     // End of main
     stringstream lS;

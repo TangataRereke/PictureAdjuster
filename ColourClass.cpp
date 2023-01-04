@@ -3,11 +3,145 @@
 	#define COLOURCLASS_H
 #endif
 #include <algorithm>
+#include <math.h>
 
 void ColourClass::setRGB(short pRed, short pGreen, short pBlue){
 	gColour.red = pRed;
 	gColour.green = pGreen;
 	gColour.blue = pBlue;
+	setRatiosBasedOffRGB();
+}
+
+void ColourClass::setInteger(long unsigned pColour){
+	long lRemainder = pColour;
+	memset(&gColour, 0, sizeof(ColourRef));
+	if(lRemainder>65536){
+		gColour.blue = floor(lRemainder / 65536);
+		lRemainder = lRemainder - (gColour.blue * 65536);
+	}
+	if(lRemainder>256){
+		gColour.green = floor(lRemainder / 256);
+		lRemainder = lRemainder - (gColour.green * 256);
+	}
+	gColour.red = lRemainder;
+	setRatiosBasedOffRGB();
+}
+
+void ColourClass::setHue(short unsigned pHue){
+	memset(&gColour, 0, sizeof(ColourRef));
+	gPercentBlue = 0;
+	gPercentGreen = 0;
+	gPercentRed = 0;
+	gHue = pHue;
+
+	double lAffect = floor(pHue % 15);
+	double lMain = 1;//(pHue % 2);
+	int lTest = 0;
+	double lSecondary = lMain / 2;
+	if(lAffect==lTest++){
+		gPercentRed = lMain;
+		gPercentGreen = lMain;
+		gPercentBlue = lMain;
+	}else if(lAffect==lTest++){
+		gPercentRed = lMain;
+		// red
+	}else if(lAffect==lTest++){
+		gPercentRed = lMain;
+		gPercentGreen = lSecondary;
+		// red/green
+	}else if(lAffect==lTest++){
+		gPercentGreen = lMain;
+		gPercentRed = lMain;
+		gPercentBlue = lSecondary;
+		// yellow/blue
+	}else if(lAffect==lTest++){
+		gPercentGreen = lMain;
+		gPercentRed = lMain;
+		// yellow
+
+	}else if(lAffect==lTest++){
+		gPercentGreen = lMain;
+		gPercentRed = lSecondary;
+		// green/red
+	}else if(lAffect==lTest++){
+		gPercentGreen = lMain;
+		// green
+	}else if(lAffect==lTest++){
+		gPercentGreen = lMain;
+		gPercentBlue = lSecondary;
+		// green/blue
+	}else if(lAffect==lTest++){
+		gPercentBlue = lMain;
+		gPercentGreen = lMain;
+		gPercentRed = lSecondary;
+		// cyan/red
+	}else if(lAffect==lTest++){
+		gPercentBlue = lMain;
+		gPercentGreen = lMain;
+		// cyan
+
+	}else if(lAffect==lTest++){
+		gPercentBlue = lMain;
+		gPercentGreen = lSecondary;
+		// blue/green
+	}else if(lAffect==lTest++){
+		gPercentBlue = lMain;
+		// blue
+	}else if(lAffect==lTest++){
+		gPercentBlue = lMain;
+		gPercentRed = lSecondary;
+		// blue/red
+	}else if(lAffect==lTest++){
+		gPercentBlue = lMain;
+		gPercentRed = lMain;
+		gPercentGreen = lSecondary;
+		// magenta/green
+	}else if(lAffect==lTest++){
+		gPercentBlue = lMain;
+		gPercentRed = lMain;
+		// magenta
+	}else if(lAffect==lTest++){
+		gPercentRed = lMain;
+		gPercentBlue = lSecondary;
+		// red/blue
+	}
+
+
+	gColour.red = gPercentRed * 255;
+	gColour.green = gPercentGreen * 255;
+	gColour.blue = gPercentBlue * 255;
+	setRatiosBasedOffRGB();
+}
+
+void ColourClass::setBrightness(double pBrightness){
+	double lNewBrightness = (gBrightness-pBrightness) *-1;
+	short lColour = (gOriginalRed + lNewBrightness) * 255;
+	if(lColour>255){
+		lColour=255;
+	}else if(lColour<0){
+		lColour = 0;
+	}
+	gPercentRed = (double)lColour/255;
+	gColour.red = lColour;
+
+	lColour = (gOriginalGreen + lNewBrightness) * 255;
+	if(lColour>255){
+		lColour=255;
+	}else if(lColour<0){
+		lColour = 0;
+	}
+	gPercentGreen = (double)lColour/255;
+	gColour.green = lColour;
+
+	lColour = (gOriginalBlue + lNewBrightness) * 255;
+	if(lColour>255){
+		lColour=255;
+	}else if(lColour<0){
+		lColour = 0;
+	}
+	gPercentBlue = (double)lColour/255;
+	gColour.blue = lColour;
+	gBrightness = pBrightness;
 }
 
 short ColourClass::getMax(){
@@ -17,351 +151,212 @@ short ColourClass::getMax(){
 short ColourClass::getMin(){
     return min(min(gColour.red, gColour.green),gColour.blue);
 };
-
-short ColourClass::getSaturation(){
-		return getMax() - getMin();
-};
-
-short ColourClass::getHue(){
-	short lMax = getMax();
-	short lMin = getMin();
-	double lHue = 0;
-	short lDelta = lMax - lMin;
-	if(lDelta==0){
-		return -1;
+short unsigned ColourClass::getCalculatedHue(){
+	short unsigned lRedRatio = 2;
+	if(gPercentRed<.10){
+		lRedRatio = 0;
+	}else if(gPercentRed<.52){
+		lRedRatio = 1;
 	}
-	if(lMax==gColour.red){
-		lHue = (gColour.green - gColour.blue) / lDelta;
-	}else if(lMax==gColour.green){
-		lHue = 2 + (gColour.blue - gColour.red) / lDelta;
+	short unsigned lGreenRatio = 2;
+	if(gPercentGreen<.10){
+		lGreenRatio = 0;
+	}else if(gPercentGreen<.52){
+		lGreenRatio = 1;
+	}
+	short unsigned lBlueRatio = 2;
+	if(gPercentBlue<.10){
+		lBlueRatio = 0;
+	}else if(gPercentBlue<.52){
+		lBlueRatio = 1;
+	}
+	if(max(max(lRedRatio, lGreenRatio), lBlueRatio)<2){
+		if(lRedRatio==1){
+			lRedRatio++;
+		}
+		if(lGreenRatio==1){
+			lGreenRatio++;
+		}
+		if(lBlueRatio==1){
+			lBlueRatio++;
+		}
+	}
+	if(lBlueRatio==2&&lRedRatio==1&&lGreenRatio==1){
+		lRedRatio = 0;
+		lGreenRatio = 0;
+	}else if(lBlueRatio==1&&lRedRatio==2&&lGreenRatio==1){
+		lBlueRatio = 0;
+		lGreenRatio = 0;
+	}else if(lBlueRatio==1&&lRedRatio==1&&lGreenRatio==2){
+		lBlueRatio = 0;
+		lRedRatio = 0;
+
+	}
+	//std::cout << getDisplay() << " = " << gPercentRed << "," << gPercentGreen << "," << gPercentBlue << ": " << lRedRatio << "," << lGreenRatio << "," << lBlueRatio << std::endl;
+	
+	if(lRedRatio==lGreenRatio&&lGreenRatio==lBlueRatio){
+		return 0;
+	}else if(lRedRatio==2&&lGreenRatio==0&&lBlueRatio==0){
+		return 1;
+	}else if(lRedRatio==2&&lGreenRatio==1&&lBlueRatio==0){
+		return 2;
+	}else if(lRedRatio==2&&lGreenRatio==2&&lBlueRatio==1){
+		return 3;
+	}else if(lRedRatio==2&&lGreenRatio==2&&lBlueRatio==0){
+		return 4;
+	}else if(lRedRatio==1&&lGreenRatio==2&&lBlueRatio==0){
+		return 5;
+	}else if(lRedRatio==0&&lGreenRatio==2&&lBlueRatio==0){
+		return 6;
+	}else if(lRedRatio==0&&lGreenRatio==2&&lBlueRatio==1){
+		return 7;
+	}else if(lRedRatio==1&&lGreenRatio==2&&lBlueRatio==2){
+		return 8;
+	}else if(lRedRatio==0&&lGreenRatio==2&&lBlueRatio==2){
+		return 9;
+	}else if(lRedRatio==0&&lGreenRatio==1&&lBlueRatio==2){
+		return 10;
+	}else if(lRedRatio==0&&lGreenRatio==0&&lBlueRatio==2){
+		return 11;
+	}else if(lRedRatio==1&&lGreenRatio==0&&lBlueRatio==2){
+		return 12;
+	}else if(lRedRatio==2&&lGreenRatio==1&&lBlueRatio==2){
+		return 13;
+	}else if(lRedRatio==2&&lGreenRatio==0&&lBlueRatio==2){
+		return 14;
+	}else if(lRedRatio==2&&lGreenRatio==0&&lBlueRatio==1){
+		return 15;
+	}
+	std::cout << "We have a 16 " << lRedRatio << "/" << lGreenRatio << "/" << lBlueRatio << "/" <<  std::endl;
+	return 16;
+}
+
+void ColourClass::setRatiosBasedOffRGB(){
+    gPercentRed = (double)gColour.red / 255;
+	gOriginalRed = gPercentRed;
+    gPercentGreen = (double)gColour.green / 255;
+	gOriginalGreen = gPercentGreen;
+    gPercentBlue = (double)gColour.blue / 255;
+	gOriginalBlue = gPercentBlue;
+	gSaturation = getMaxRange() - getMinRange();
+	gBrightness = (gPercentRed + gPercentGreen + gPercentBlue) / 3;
+	gHue = getCalculatedHue();
+}
+
+double ColourClass::getMaxRange(){
+	double lMax = 0;
+	lMax = gPercentRed;
+	if(gPercentBlue>lMax){
+		lMax = gPercentBlue;
+	}
+	if(gPercentGreen>lMax){
+		lMax = gPercentGreen;
+	}
+	return lMax;
+}
+double ColourClass::getMidRange(){
+	double lMax = getMaxRange();
+	double lMin = getMinRange();
+	double lMiddle = 0;
+	
+	if(gPercentBlue!=lMax&&gPercentBlue!=lMin){
+		lMiddle = gPercentBlue;
+	}else if(gPercentGreen!=lMax&&gPercentGreen!=lMin){
+		lMiddle = gPercentGreen;
+	}else if(gPercentRed!=lMax&&gPercentRed!=lMin){
+		lMiddle = gPercentRed;
 	}else{
-		lHue = 4 + (gColour.red - gColour.green) / lDelta;
+		lMiddle = ((lMax - lMin) / 2) + lMin;
 	}
-	lHue *= 60;
-	if(lHue>=0){
-		return lHue;
+	return lMiddle;
+}
+double ColourClass::getMinRange(){
+	double lMin = 0;
+	lMin = gPercentRed;
+	if(gPercentBlue<lMin){
+		lMin = gPercentBlue;
 	}
-	return lHue += 360;
+	if(gPercentGreen<lMin){
+		lMin = gPercentGreen;
+	}
+	return lMin;
 }
-
-short ColourClass::getValue(){
-	return getMax();
+void ColourClass::setSaturation(double pValue){
+	double lNewR = gPercentRed;
+	double lNewG = gPercentGreen;
+	double lNewB = gPercentBlue;
+	double lMax = getMaxRange();
+	double lMin = getMinRange();
+	double lMid = getMidRange();
+	double lNewMax = pValue;
+	double lNewMin = 1 - pValue;
+	double lNewMid = lNewMin + ((lNewMax - lNewMin)/2);
+	if(lNewMin>lNewMax){
+		lNewMin = lNewMax;
+	}
+	if(lNewMid>lNewMax){
+		lNewMid = lNewMax;
+	}else if(lNewMid<lNewMin){
+		lNewMid = lNewMid;
+	}
+	if(lNewR==lMax){
+		lNewR = lNewMax;
+	}
+	if(lNewG==lMax){
+		lNewG = lNewMax;
+	}
+	if(lNewB==lMax){
+		lNewB = lNewMax;
+	}
+	if(gPercentRed==lMin){
+		lNewR = lNewMin;
+	}
+	if(gPercentGreen==lMin){
+		lNewG = lNewMin;
+	}
+	if(gPercentBlue==lMin){
+		lNewB = lNewMin;
+	}
+	if(gPercentRed==lMid){
+		lNewR = lNewMid;
+	}
+	if(gPercentGreen==lMid){
+		lNewG = lNewMid;
+	}
+	if(gPercentBlue==lMid){
+		lNewB = lNewMid;
+	}
+	gColour.red = (lNewR * gPercentRed) * 255;
+	gColour.green = (lNewG * gPercentGreen) * 255;
+	gColour.blue = (lNewB * gPercentBlue) * 255;
+	setRatiosBasedOffRGB();
 }
-
 
 bool ColourClass::isSkin(){
-		if(getSaturation()<=13){
-            return false;
-		}
-		double lPercent1 = 0;
-		double lPercent2 = 0;
-		short lMax = getMax();
-		if(lMax<40){
-			return false;
-		}else if(gColour.blue==lMax){
-        //    cout << "C" << endl;
-            return false;
-		}else if(gColour.red==lMax){
-			if(gColour.green>=gColour.blue){
-				lPercent1 = (double)((double)gColour.green / (double)gColour.red);
-				lPercent2 = (double)((double)gColour.blue / (double)gColour.green);
-				if(lPercent1>=.37&&lPercent1<=.80){
-					return true;
-				}else if(lPercent2>=.63){//}&&lPercent2<=.89){
-					return true;
-				}
-			}else{
-				lPercent1 = (double)((double)gColour.blue / (double)gColour.red);
-				lPercent2 = (double)((double)gColour.green / (double)gColour.blue);
-				if(lPercent1>=.42){//&&lPercent1<=.90){
-					if(lPercent2>=.70){
-						return true;
-					}
-				}
-			}
-		}
-        //cout << "D" << endl;
+	if(gHue<0||gHue>4){
 		return false;
-}
-
-
-void ColourClass::setFromColourRef(ColourRef pSetFrom){
-	memcpy(&gColour, &pSetFrom, sizeof(ColourRef));
-}
-
-bool ColourClass::isMajorChange(ColourRef pCompare){
-	ColourClass lClass;
-	lClass.setFromColourRef(pCompare);
-	memcpy(&pCompare, &lClass.gColour, sizeof(ColourRef));
-	double lRGThis = 0.0000;
-	double lGBThis = 0.0000;
-	double lRBThis = 0.0000;
-	double lRGOther = 0.0000;
-	double lGBOther = 0.0000;
-	double lRBOther = 0.0000;
-    if(gColour.red>0||gColour.green>0){
-        if(gColour.red>gColour.green){
-            lRGThis = (double)gColour.green / (double)gColour.red;
-        }else{
-            lRGThis = (double)gColour.red / (double)gColour.green;
-        }
-    }
-    if(gColour.green>0||gColour.blue>0){
-        if(gColour.green>gColour.blue){
-            lGBThis = (double)gColour.blue / (double)gColour.green;
-        }else{
-            lGBThis = (double)gColour.green / (double)gColour.blue;
-        }
-    }
-    if(gColour.red>0||gColour.blue>0){
-        if(gColour.red>gColour.blue){
-            lRBThis = (double)gColour.blue / (double)gColour.red;
-        }else{
-            lRBThis = (double)gColour.red / (double)gColour.blue;
-        }
-    }
-    if(pCompare.red>0||pCompare.green>0){
-        if(pCompare.red>pCompare.green){
-            lRGOther = (double)pCompare.green / (double)pCompare.red;
-        }else{
-            lRGOther = (double)pCompare.red / (double)pCompare.green;
-        }
-    }
-    if(pCompare.green>0||pCompare.blue>0){
-        if(pCompare.green>pCompare.blue){
-            lGBOther = (double)pCompare.blue / (double)pCompare.green;
-        }else{
-            lGBOther = (double)pCompare.green / (double)pCompare.blue;
-        }
-    }
-    if(pCompare.red>0||pCompare.blue>0){
-        if(pCompare.red>pCompare.blue){
-            lRBOther = (double)pCompare.blue / (double)pCompare.red;
-        }else{
-            lRBOther = (double)pCompare.red / (double)pCompare.blue;
-        }
-    }
-
-    double lFactor1 = 0.0000;
-    double lFactor2 = 0.0000;
-    double lFactor3 = 0.0000;
-    if(lRGThis>lRGOther){
-        lFactor1 = lRGThis - lRGOther;
-    }else{
-        lFactor1 = lRGOther - lRGThis;
-    }
-    if(lGBThis>lGBOther){
-        lFactor2 = lGBThis - lGBOther;
-    }else{
-        lFactor2 = lGBOther - lGBThis;
-    }
-    if(lRBThis>lRBOther){
-        lFactor3 = lRBThis - lRBOther;
-    }else{
-        lFactor3 = lRBOther - lRBThis;
-    }
-
-    // TO DO IF required, detect highest values - dopn't think its required
-    double lFactor = 0.55;// still doing second
-    if(lFactor1>lFactor||lFactor2>lFactor||lFactor3>lFactor){
-        return true;
-    }
-    return false;
-
-/*
-    if(getSaturation()>16&&lClass.getSaturation()>16){
-		int lThisHue = getHue();
-		int lOtherHue = lClass.getHue();
-		int lHueDifference = max(lThisHue, lOtherHue) - min(lThisHue, lOtherHue);
-		if(max(lThisHue+360, lOtherHue+360)-min(lThisHue, lOtherHue)<lHueDifference){
-            lHueDifference = max(lThisHue+360, lOtherHue+360)-min(lThisHue, lOtherHue);
-		}
-		if(lHueDifference>14){
-			//return true;
-		}
-        return false;
-    }
-    return true;
-    short lThisBrightness = getBrightness();
-    short lOtherBrightness = lClass.getBrightness();
-    short lTotal = 0;
-    if(lThisBrightness>lOtherBrightness){
-        lTotal = (gColour.red - pCompare.red) + (gColour.green - pCompare.green) + (gColour.blue - pCompare.blue);
-    }else{
-        lTotal = (pCompare.red - gColour.red) + (pCompare.green - gColour.green) + (pCompare.blue - gColour.blue);
-    }
-    return abs(lTotal) > 128;
-	short lTotal = max(pCompare.red, gColour.red)-min(pCompare.red, gColour.red);
-	lTotal = lTotal + max(pCompare.green, gColour.green)-min(pCompare.green, gColour.green);
-	lTotal = lTotal + max(pCompare.blue, gColour.blue)-min(pCompare.blue, gColour.blue);
-	return lTotal > 128;*/
-	/*ColourClass lClass;
-	memcpy(&pCompare, &lClass.gColour, sizeof(ColourRef));
-	if(getSaturation()>32){
-		int lThisHue = getHue();
-		int lOtherHue = lClass.getHue();
-		int lHueDifference = max(lThisHue, lOtherHue) - min(lThisHue, lOtherHue);
-		if(max(lThisHue+360, lOtherHue+360)-min(lThisHue, lOtherHue)<lHueDifference){
-            lHueDifference = max(lThisHue+360, lOtherHue+360)-min(lThisHue, lOtherHue);
-		}
-		if(lHueDifference>14){
-			return true;
-		}
 	}
-	int lDiffBrightness =  max(getBrightness(), lClass.getBrightness())- min(getBrightness(), lClass.getBrightness());
-	return lDiffBrightness > 90;*/
+	if(gSaturation>=.06125&&gSaturation<=.605){
+		return true;
+	}
+	return false;
+}
+
+bool ColourClass::isMinorChange(ColourRef pCompare){
+	ColourClass lCompareWith;
+	lCompareWith.setRGB(pCompare.red, pCompare.green, pCompare.blue);
+	if(getHue()!=lCompareWith.getHue()){
+		return true;
+	}
+	return false;
+}
+
+bool ColourClass::isTintable(){
+	return getHue() != 0;
 }
 
 const char *ColourClass::getDisplay(){
 	stringstream lSS;
 	lSS << "R" << (int)gColour.red << "G" << (int)gColour.green << "B" << (int)gColour.blue;
 	return lSS.str().c_str();
-}
-
-bool ColourClass::isMinorChange(ColourRef pCompare){
-	short lTotal = max(pCompare.red, gColour.red)-min(pCompare.red, gColour.red);
-	lTotal = lTotal + max(pCompare.green, gColour.green)-min(pCompare.green, gColour.green);
-	lTotal = lTotal + max(pCompare.blue, gColour.blue)-min(pCompare.blue, gColour.blue);
-	return lTotal > 3;
-}
-
-int ColourClass::simplifyNumber(int pNumber){
-	if(pNumber<32){
-		return 0;
-	}else if(pNumber<64){
-		return 32;
-	}else if(pNumber<96){
-		return 64;
-	}else if(pNumber<128){
-		return 96;
-	}else if(pNumber<160){
-		return 128;
-	}else if(pNumber<192){
-		return 160;
-	}else if(pNumber<224){
-		return 192;
-	}else if(pNumber<255){
-		return 224;
-	}
-	return 255;
-}
-
-void ColourClass::simplifyColour(){
-	gColour.red = simplifyNumber(gColour.red);
-	gColour.green = simplifyNumber(gColour.green);
-	gColour.blue = simplifyNumber(gColour.blue);
-}
-
-bool ColourClass::isTintable(){
-	return getSaturation() > 33;
-}
-
-ColourClass::ColourRef ColourClass::applyTint(ColourRef pTint){
-	int lColour = gColour.red - pTint.red;
-	gColour.red = max(lColour, 0) / 2;
-	lColour = gColour.green - pTint.green;
-	gColour.green = max(lColour, 0) / 2;
-	lColour = gColour.blue - pTint.blue;
-	gColour.blue = max(lColour, 0) / 2;
-	return gColour;
-}
-
-ColourClass::ColourRef ColourClass::checkTint(ColourRef pMainTint, bool &pStop){
-	ColourRef lReturn;
-	memcpy(&lReturn, &pMainTint, sizeof(ColourRef));
-	if(gColour.red<lReturn.red){
-		lReturn.red = gColour.red;
-	}
-	if(gColour.green<lReturn.green){
-		lReturn.green = gColour.green;
-	}
-	if(gColour.blue<lReturn.blue){
-		lReturn.blue = gColour.blue;
-	}
-	if(lReturn.red==0&&lReturn.green==0&&lReturn.blue==0){
-		pStop = true;
-	}
-	return lReturn;
-}
-
-void ColourClass::setBrightness(double pNewBrightness){
-	double lBrightness = getBrightness();
-	if(lBrightness<pNewBrightness){
-		while(lBrightness<pNewBrightness){
-			if(gColour.red==255||gColour.green==255||gColour.blue==255){
-				return;
-			}
-			gColour.red++;
-			gColour.green++;
-			gColour.blue++;
-			lBrightness = getBrightness();
-		}
-	}else if(lBrightness>pNewBrightness){
-		while(lBrightness>pNewBrightness){
-			if(gColour.red==0||gColour.green==0||gColour.blue==0){
-				return;
-			}
-			gColour.red--;
-			gColour.green--;
-			gColour.blue--;
-			lBrightness = getBrightness();
-		}
-	}else{
-     //   cout << lBrightness << "==" << pNewBrightness << endl;
-	}
-}
-
-double ColourClass::getMinimumBalance(){
-    return (getBrightness() - getMin());
-}
-
-double ColourClass::getMaximumBalancePossible(){
-	double lRed = gColour.red;
-	double lGreen = gColour.green;
-	double lBlue = gColour.blue;
-	//cout << "Start" << "Red: " << lRed << " Green: " << lGreen << " Blue: " << lBlue << endl;
-	while(lRed<255&&lGreen<255&&lBlue<255){
-		lRed++;
-		lGreen++;
-		lBlue++;
-	}
-	return min(min(lRed, lGreen), lBlue);
-
-}
-
-double ColourClass::getMinimumBalancePossible(){
-	double lRed = gColour.red;
-	double lGreen = gColour.green;
-	double lBlue = gColour.blue;
-	//cout << "Start" << "Red: " << lRed << " Green: " << lGreen << " Blue: " << lBlue << endl;
-	while(lRed>0&&lGreen>0&&lBlue>0){
-		lRed--;
-		lGreen--;
-		lBlue--;
-	}
-	return max(max(lRed, lGreen), lBlue);
-
-}
-
-double ColourClass::getBrightness(){
-    return getMax();
-/*		short lLowest = getMin();
-		if(lLowest==gColour.red){
-			lLowest = gColour.red;
-		}else if(lLowest==gColour.green){
-			lLowest = gColour.green;
-		}else{
-			lLowest = gColour.blue;
-		}
-		return ((double) (gColour.red - lLowest)+(gColour.green - lLowest)+(gColour.blue - lLowest))/3;*/
-}
-
-double ColourClass::getMaximumBalance(){
-	return getMax();
-}
-
-void ColourClass::invertColours(){
-	gColour.red = 255 - gColour.red;
-	gColour.blue = 255 - gColour.blue;
-	gColour.green = 255 - gColour.green;
 }

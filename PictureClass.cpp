@@ -28,15 +28,14 @@ bool PictureClass::compare(PictureClass *pCompareWidth){
 	return false;
 }
 
-void PictureClass::simplifyColours(){
-	for(int bY=0;bY<gHeight;bY++){
-		for(int bX=0;bX<gWidth-1;bX++){
-			getPixel(bX, bY);
-			memcpy(&gPenColour.gColour, &gCurrentColour.gColour, sizeof(ColourClass::ColourRef));
-			gPenColour.simplifyColour();
-			setPixel(bX, bY);
-		}
-	}
+ColourClass::ColourRef ColourClass::applyTint(ColourRef pTint){
+	int lColour = gColour.red - pTint.red;
+	gColour.red = max(lColour, 0) / 2;
+	lColour = gColour.green - pTint.green;
+	gColour.green = max(lColour, 0) / 2;
+	lColour = gColour.blue - pTint.blue;
+	gColour.blue = max(lColour, 0) / 2;
+	return gColour;
 }
 
 void PictureClass::deleteColourItems(){
@@ -261,40 +260,52 @@ void PictureClass::removeInterference(){
 
 double PictureClass::getHighestColourMax(){
 	deleteColourItems();
+    double lHighest = 0.00;
 	gSortItemColourCount = 0;
-    double lHighPossible = 0;
-    double lHighestPossible = 0;
 	for(int bX=0;bX<gWidth;bX++){
 		for(int bY=0;bY<gHeight;bY++){
 			getPixel(bX, bY);
 			double lValue = gCurrentColour.getBrightness();
 			insertColourSortItem(lValue, bX, bY);
-            lHighPossible = gCurrentColour.getMaximumBalancePossible();
-            if(lHighPossible>lHighestPossible){
-                lHighestPossible = lHighPossible;
+            if(lValue>lHighest){
+                lHighest = lValue;
             }
-			
 		}
 	}
-	return lHighestPossible;
+	return lHighest;
 }
 
 double PictureClass::getLowestColourMin(){
-    double lLowPossible = 0;
-    double lLowestPossible = 0;
+    double lLowPossible = 1;
 	for(int bX=0;bX<gWidth;bX++){
 		for(int bY=0;bY<gHeight;bY++){
 			getPixel(bX, bY);
 			double lValue = gCurrentColour.getBrightness();
 			insertColourSortItem(lValue, bX, bY);
-            lLowPossible = gCurrentColour.getMinimumBalancePossible();
-            if(lLowPossible<lLowestPossible){
-                lLowestPossible = lLowPossible;
+            if(lValue<lLowPossible){
+                lLowPossible = lValue;
             }
-			
 		}
 	}
-	return lLowestPossible;
+	return lLowPossible;
+}
+
+ColourClass::ColourRef ColourClass::checkTint(ColourRef pMainTint, bool &pStop){
+	ColourRef lReturn;
+	memcpy(&lReturn, &pMainTint, sizeof(ColourRef));
+	if(gColour.red<lReturn.red){
+		lReturn.red = gColour.red;
+	}
+	if(gColour.green<lReturn.green){
+		lReturn.green = gColour.green;
+	}
+	if(gColour.blue<lReturn.blue){
+		lReturn.blue = gColour.blue;
+	}
+	if(lReturn.red==0&&lReturn.green==0&&lReturn.blue==0){
+		pStop = true;
+	}
+	return lReturn;
 }
 
 double PictureClass::changeBrightnessOfItem(bool pFirst, ColourItemSort *pColourSortItem, double pTargetBrightness, double pFactor){
@@ -345,22 +356,25 @@ double PictureClass::autoBrightenSmallFactor(double pHighestBrightness, double p
 void PictureClass::lastResortAutoBrighten(double pColourMax){
 	double lHighestColourMax = pColourMax;
 	double lLowestColourMin = getLowestColourMin();
-	double lRate = (lHighestColourMax - lLowestColourMin + 1) / gSortItemColourCount;
-	double lBrightness = lHighestColourMax;
+	double lRate = (double)1 / (gSortItemColourCount+1);/*(lHighestColourMax - lLowestColourMin + 1) / gSortItemColourCount;*/
+    //std::cout << "ColourMax" << pColourMax << " min: " << lLowestColourMin << " rate: " << lRate << std::endl;
+	double lBrightness = 1;//lHighestColourMax;
 	ColourItemSort *lItem = gAllColourSortItems;
 	while(lItem!=0){
 		Point *lPoint = lItem->allPoints;
 		while(lPoint!=0){
 			getPixel(lPoint->x, lPoint->y);
-			memcpy(&gPenColour.gColour, &gCurrentColour.gColour, sizeof(ColourClass::ColourRef));
+//			memcpy(&gPenColour.gColour, &gCurrentColour.gColour, sizeof(ColourClass::ColourRef));
+            gPenColour.setRGB(gCurrentColour.gColour.red, gCurrentColour.gColour.green, gCurrentColour.gColour.blue);
 			gPenColour.setBrightness(lBrightness);
 			setPixel(lPoint->x, lPoint->y);
 			lPoint = lPoint->next;
 		}
 		if(lItem->next!=0){
-            if(lBrightness < 0.5){
+            if(lBrightness < 0.0){
                 lBrightness = 0;
             }else{
+               // std::cout << "Brightness: " << lBrightness << ", rate:  " << lRate << std::endl;
 			    lBrightness = lBrightness - lRate;	
             }
             
@@ -399,9 +413,6 @@ void PictureClass::autoLighten(){
 	double lHighestColourMax = getHighestColourMax();
 	lastResortAutoBrighten(lHighestColourMax);
 	return;
-	if(!autoBrighten(lHighestColourMax, 0.3, .1)){
-		lastResortAutoBrighten(lHighestColourMax);
-	}
 }
 
 
@@ -456,7 +467,6 @@ int PictureClass::recolourGradientFrom(int pX, int pY){
 }
 
 void PictureClass::removeTint(){
-	log("removeTint begin");
 	ColourClass::ColourRef gMainTint;
 	memset(&gMainTint, 0, sizeof(ColourClass::ColourRef));
 	bool lStartedTint = false;
@@ -484,25 +494,17 @@ void PictureClass::removeTint(){
 	for(int bX=0;bX<gWidth;bX++){
 		for(int bY=0;bY<gHeight;bY++){
 			getPixel(bX, bY);
-			if(gCurrentColour.isTintable()){
-				gPenColour.gColour = gCurrentColour.applyTint(lClass.gColour);
-				setPixel(bX, bY);
-			}else{
-				memcpy(&gPenColour.gColour, &gCurrentColour.gColour, sizeof(ColourClass::ColourRef));
-				double bBrightness = gCurrentColour.getBrightness();
-				gPenColour.setBrightness(bBrightness-lBrightness);				
-				setPixel(bX, bY);
-			}
+			memcpy(&gPenColour.gColour, &gCurrentColour.gColour, sizeof(ColourClass::ColourRef));
+			double bBrightness = gCurrentColour.getBrightness();
+			gPenColour.setBrightness(bBrightness-lBrightness);				
+			setPixel(bX, bY);
 		}
 	}
 	autoLighten();
-	log("removeTint end");
 	
 }
 
 void PictureClass::removeDuplicatePixels(){
-	log("removeDuplicatePixels begin");
-	std::vector<std::thread> lThreads;
 	for(int bY=0;bY<gHeight;bY++){
 		for(int bX=0;bX<gWidth;bX++){
 			getPixel(bX, bY);
@@ -512,11 +514,10 @@ void PictureClass::removeDuplicatePixels(){
 					bX = lResult+1;
 				}
 			}
-			memcpy(&gPenColour, &gCurrentColour, sizeof(ColourClass::ColourRef));
+            gPenColour.setRGB(gCurrentColour.gColour.red, gCurrentColour.gColour.green, gCurrentColour.gColour.blue);
 		}
 	}
 	
-	log("removeDuplicatePixels end");
 }
 
 
@@ -566,14 +567,8 @@ void PictureClass::newImage(int pWidth, int pHeight){
     gData = new BYTE[gSize];
     clearPicture();
 }
-void PictureClass::log(const char *pText){
-    if(gLogging){
-        cout << "PictureClass:" << pText << endl;
-    }
-}
 
 void PictureClass::drawLine(RECT pRect){
-    log("drawLine begin");
     double x{(double)pRect.right - (double)pRect.left}, y{(double)pRect.bottom - (double)pRect.top};
     const double lmax{max(fabs(x), fabs(y))};
     double lX = pRect.left;
@@ -581,23 +576,17 @@ void PictureClass::drawLine(RECT pRect){
     x /= lmax; y /= lmax;
     for (double n{0}; n < lmax; ++n)
     {
-        if(gIndividualLog){
-            cout << "\t\tlX: " << lX << ", lY: " << lY << endl;
-        }
         setPixel(lX, lY);
         lX += x; lY += y;
     }
     gLastRect.left = lX;
     gLastRect.top = lY;
-    log("drawLine end");
 
 }
 
 void PictureClass::lineTo(int pX, int pY){
-    log("lineTo begin");
     gLastRect.bottom = pY;
     gLastRect.right = pX;
-    log("lineTo end");
 
 }
 
@@ -607,19 +596,16 @@ void PictureClass::setPen(int pPen){
 }
 
 int PictureClass::draw1(int pX, int pY){
-    log("draw1 begin");
     RECT lRect;
     lRect.top = pY;
     lRect.left = pX;
     lRect.right = pX;
     lRect.bottom = pY + TEXT_MAXHEIGHT;
     drawLine(lRect);
-    log("draw1 end");
     return pX + TEXT_PADDING;
 }
 
 int PictureClass::draw2(int pX, int pY){
-    log("draw2 begin");
     RECT lRect;
     lRect.top = pY;
     lRect.left = pX;
@@ -646,12 +632,10 @@ int PictureClass::draw2(int pX, int pY){
     lRect.right = pX + TEXT_MAXWIDTH;
     drawLine(lRect);
 
-    log("draw2 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::draw5(int pX, int pY){
-    log("draw5 begin");
     RECT lRect;
     lRect.top = pY;
     lRect.left = pX;
@@ -680,12 +664,10 @@ int PictureClass::draw5(int pX, int pY){
     lRect.right = pX + TEXT_MAXWIDTH;
     drawLine(lRect);
 
-    log("draw5 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::draw3(int pX, int pY){
-    log("draw3 begin");
     RECT lRect;
     lRect.top = pY;
     lRect.left = pX;
@@ -711,12 +693,10 @@ int PictureClass::draw3(int pX, int pY){
     lRect.bottom = pY + (TEXT_MAXHEIGHT);
     drawLine(lRect);
 
-    log("draw3 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::draw6(int pX, int pY){
-    log("draw6 begin");
     RECT lRect;
     lRect.top = pY;
     lRect.left = pX;
@@ -748,7 +728,6 @@ int PictureClass::draw6(int pX, int pY){
     lRect.bottom = pY + TEXT_MAXHEIGHT;
     drawLine(lRect);
 
-    log("draw6 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
@@ -763,9 +742,6 @@ bool PictureClass::hasRowGotSkin(int pRow){
 }
 
 
-void PictureClass::skinDetect(){
-
-}
 
 bool PictureClass::hasColumnGotSkin(int pColumn){
     for(int lY=0;lY<gHeight;lY++){
@@ -778,19 +754,22 @@ bool PictureClass::hasColumnGotSkin(int pColumn){
 }
 
 void PictureClass::showSkin(){
-	setPen(Pen_Invert);
+	
 	for(int lY=0;lY<gHeight;lY++){
 		for(int lX=0;lX<gWidth;lX++){
 			getPixel(lX, lY);
-      if(gCurrentColour.isSkin()){
+            if(gCurrentColour.isSkin()){
+                gPenColour.setHue(gCurrentColour.getHue());
+                //gCurrentColour.setSaturation(0);
+                //gCurrentColour.setBrightness(0);
 				setPixel(lX, lY);
+            
 			}
    }
 	}
 }
 
 void PictureClass::bestRatioResize(int pNewWidth, int pNewHeight){
-    log("bestRatioResize begin");
     double lWidthRatio = (double)((double)gWidth / (double)pNewWidth);
     double lHeightRatio = (double)((double)gHeight / (double)pNewHeight);
     double lSmallestRatio = min(lWidthRatio, lHeightRatio);
@@ -815,11 +794,9 @@ void PictureClass::bestRatioResize(int pNewWidth, int pNewHeight){
     gHeight = lNewHeight;
     delete gData;
     gData = lNewData;
-    log("bestRatioResize end");
 }
 
 void PictureClass::lowRatioResize(int pNewWidth, int pNewHeight){
-    log("lowRatioResize begin");
     double lWidthRatio = (double)((double)gWidth / (double)pNewWidth);
     double lHeightRatio = (double)((double)gHeight / (double)pNewHeight);
     double lLargestRatio = max(lWidthRatio, lHeightRatio);
@@ -844,11 +821,9 @@ void PictureClass::lowRatioResize(int pNewWidth, int pNewHeight){
     gHeight = lNewHeight;
     delete gData;
     gData = lNewData;
-    log("lowRatioResize end");
 }
 
 void PictureClass::padRight(){
-    log("padRight begin");
     int lNewWidth = gWidth + 1;
     long lSize = lNewWidth * gHeight * BYTES_PER_PIXEL;
     BYTE *lNewData = new BYTE[lSize+1];
@@ -871,12 +846,10 @@ void PictureClass::padRight(){
     gWidth = lNewWidth;
     delete gData;
     gData = lNewData;
-    log("padRight end");	
 }
 
 
 void PictureClass::padLeft(){
-    log("padLeft begin");
     int lNewWidth = gWidth + 1;
     int lCurrentX = 0;
     long lSize = lNewWidth * gHeight * BYTES_PER_PIXEL;
@@ -904,11 +877,9 @@ void PictureClass::padLeft(){
     gWidth = lNewWidth;
     delete gData;
     gData = lNewData;
-    log("padLeft end");	
 }
 
 void PictureClass::chopColumn(int pColumn){
-    log("chopColumn begin");
     int lNewWidth = gWidth - 1;
     int lCurrentX = 0;
     int lCurrentY = 0;
@@ -930,11 +901,9 @@ void PictureClass::chopColumn(int pColumn){
     gWidth = lNewWidth;
     delete gData;
     gData = lNewData;
-    log("chopColumn end");
 }
 
 void PictureClass::padBottom(){
-	log("padBottom begin");
 	int lNewHeight = gHeight + 1;
 	long lSize = gWidth * lNewHeight * BYTES_PER_PIXEL;
 	BYTE *lNewData = new BYTE[lSize+1];
@@ -953,11 +922,9 @@ void PictureClass::padBottom(){
   gHeight = lNewHeight;
   delete gData;
   gData = lNewData;
-	log("padBottom end");
 }
 
 void PictureClass::padTop(){
-	log("padTop begin");
 	int lNewHeight = gHeight + 1;
 	long lSize = gWidth * lNewHeight * BYTES_PER_PIXEL;
 	BYTE *lNewData = new BYTE[lSize+1];
@@ -973,11 +940,9 @@ void PictureClass::padTop(){
   gHeight = lNewHeight;
   delete gData;
   gData = lNewData;
-	log("padTop end");
 }
 
 void PictureClass::chopRow(int pRow){
-    log("chopRow begin");
     int lNewHeight = gHeight - 1;
     int lCurrentX = 0;
     int lCurrentY = 0;
@@ -999,7 +964,6 @@ void PictureClass::chopRow(int pRow){
     gHeight = lNewHeight;
     delete gData;
     gData = lNewData;
-    log("chopRow end");
 }
 
 bool PictureClass::autoCropSide(){
@@ -1047,9 +1011,9 @@ bool PictureClass::autoCropTopBottom(){
     bool lTop = hasRowGotSkin(0);
     bool lBottom = hasRowGotSkin(gHeight - 1);
     if(lTop==lBottom){
-				if(lTop){
-					return false;
-				}
+		if(lTop){
+			return false;
+		}
         if(gLastTopCrop){
             chopRow(0);
         }else{
@@ -1067,7 +1031,6 @@ bool PictureClass::autoCropTopBottom(){
 
 
 void PictureClass::smartResize(int pNewWidth, int pNewHeight){
-    log("smartResize begin");
     bestRatioResize(pNewWidth, pNewHeight);
     while(gWidth>pNewWidth){
         if(!autoCropSide()){
@@ -1081,8 +1044,6 @@ void PictureClass::smartResize(int pNewWidth, int pNewHeight){
 					break;
 				}
     }
-    log("smartResize end");
-
 }
 
 void PictureClass::padResize(int pNewWidth, int pNewHeight){
@@ -1100,7 +1061,6 @@ void PictureClass::padResize(int pNewWidth, int pNewHeight){
 }
 
 int PictureClass::draw9(int pX, int pY){
-    log("draw9 begin");
     RECT lRect;
     lRect.top = pY;
     lRect.left = pX;
@@ -1132,12 +1092,10 @@ int PictureClass::draw9(int pX, int pY){
     lRect.bottom = pY + (TEXT_MAXHEIGHT / 2);
     drawLine(lRect);
 
-    log("draw9 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::draw8(int pX, int pY){
-    log("draw8 begin");
     RECT lRect;
     lRect.top = pY;
     lRect.left = pX;
@@ -1169,12 +1127,10 @@ int PictureClass::draw8(int pX, int pY){
     lRect.bottom = pY + TEXT_MAXHEIGHT;
     drawLine(lRect);
 
-    log("draw8 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::draw0(int pX, int pY){
-    log("draw0 begin");
     RECT lRect;
     lRect.left = pX;
     lRect.right = pX;
@@ -1200,12 +1156,10 @@ int PictureClass::draw0(int pX, int pY){
     lRect.bottom = pY + TEXT_MAXHEIGHT;
     drawLine(lRect);
 
-    log("draw0 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::draw7(int pX, int pY){
-    log("draw7 begin");
     RECT lRect;
     lRect.left = pX;
     lRect.right = pX + TEXT_MAXWIDTH;
@@ -1219,12 +1173,10 @@ int PictureClass::draw7(int pX, int pY){
     lRect.bottom = pY + TEXT_MAXHEIGHT;
     drawLine(lRect);
 
-    log("draw7 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::draw4(int pX, int pY){
-    log("draw4 begin");
     RECT lRect;
     lRect.left = pX;
     lRect.right = pX + TEXT_MAXWIDTH;
@@ -1245,12 +1197,10 @@ int PictureClass::draw4(int pX, int pY){
     lRect.bottom = pY;
     drawLine(lRect);
 
-    log("draw4 end");
     return pX + TEXT_MAXWIDTH + TEXT_PADDING;
 }
 
 int PictureClass::drawx(int pX, int pY){
-    log("drawx begin");
     RECT lRect;
     lRect.left = pX;
     lRect.right = pX + TEXT_MAXWIDTH / 2;
@@ -1264,7 +1214,6 @@ int PictureClass::drawx(int pX, int pY){
     lRect.bottom = pY;
     drawLine(lRect);
 
-    log("drawx end");
     return pX + TEXT_MAXWIDTH / 2 + TEXT_PADDING;
 }
 
@@ -1294,9 +1243,8 @@ void PictureClass::drawText(int pX, int pY, const char *pText){
 
 }
 void PictureClass::getPixel(int pX, int pY){
-    log("getPixel begin");
     memcpy(&gCurrentColour.gColour, gData+getStartBuffer(pX, pY), sizeof(ColourClass::ColourRef));
-    log("getPixel end");
+    gCurrentColour.setRGB(gCurrentColour.gColour.red, gCurrentColour.gColour.green, gCurrentColour.gColour.blue);
 }
 
 void PictureClass::setPen(short pRed, short pGreen, short pBlue){
@@ -1305,32 +1253,22 @@ void PictureClass::setPen(short pRed, short pGreen, short pBlue){
 }
 
 void PictureClass::setPixel(int pX, int pY){
-    log("setPixel begin");
     if(pX>=gWidth||pY>=gHeight){
         cout << "SetPixel has an amount too high " << pX  << "/" << gWidth << ", " << pY << "/" << gHeight << endl;
-        log("setPixel end too high");
         return;
     }
     if(pX<0||pY<0){
         cout << "SetPixel has an amount too low " << pX  << "/" << gWidth << ", " << pY << "/" << gHeight << endl;
-        log("setPixel end too low");
         return;
     }
     long lStart = getStartBuffer(pX, pY);
-    if(gCurrentPenStyle==Pen_Invert){
-        getPixel(pX, pY);
-        gPenColour.setRGB(gCurrentColour.gColour.red, gCurrentColour.gColour.green, gCurrentColour.gColour.blue);
-				gPenColour.invertColours();
-    }
     memcpy(gData+lStart, &gPenColour.gColour, sizeof(ColourClass::ColourRef));
-    log("setPixel end main");
 }
 
 
 
 
 bool PictureClass::saveJpeg(const char *pFilename){
-    log("saveJpeg begin");
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
     /* this is a pointer to one row of image data */

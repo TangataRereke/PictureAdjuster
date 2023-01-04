@@ -54,7 +54,6 @@ class PictureClass{
         long long gHeight = 0;
         long long gWidth = 0;
         long long unsigned gSize = 0;
-        bool gIndividualLog = false;
         RECT gLastRect;
         int gCurrentPenStyle = 0;
         
@@ -77,7 +76,6 @@ class PictureClass{
         void padLeft();
         void padBottom();
         void padTop();
-        void skinDetect();
         bool autoCropSide();
         void chopColumn(int pColumn);
         void chopRow(int pRow);
@@ -115,7 +113,6 @@ class PictureClass{
         void setPixel(int, int);
         void getPixel(int, int);
         void setPen(short int, short int, short int);
-        void log(const char *pWhatToLog);
         long getStartBuffer(int, int);
         void drawText(int, int, const char *);
         int draw1(int, int);
